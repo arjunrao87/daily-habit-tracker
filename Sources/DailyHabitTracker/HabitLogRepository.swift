@@ -4,13 +4,32 @@ import Supabase
 /// Repository for reading and writing habit log data in Supabase.
 final class HabitLogRepository {
     private let client: SupabaseClient
+    private let authManager: AuthManager
     private let table = "habit_logs"
 
-    init(client: SupabaseClient = SupabaseConfig.client) {
+    init(client: SupabaseClient = SupabaseConfig.client, authManager: AuthManager? = nil) {
         self.client = client
+        self.authManager = authManager ?? AuthManager(client: client)
     }
 
-    /// Fetch all habit logs for a user on a given date.
+    /// Ensures the user is authenticated and returns their user ID.
+    private func authenticatedUserId() async throws -> String {
+        try await authManager.ensureAuthenticated()
+    }
+
+    /// Fetch all habit logs for the authenticated user on a given date.
+    func fetchLogs(date: String) async throws -> [HabitLog] {
+        let userId = try await authenticatedUserId()
+        return try await client
+            .from(table)
+            .select()
+            .eq("user_id", value: userId)
+            .eq("date", value: date)
+            .execute()
+            .value
+    }
+
+    /// Fetch all habit logs for a specific user on a given date.
     func fetchLogs(userId: String, date: String) async throws -> [HabitLog] {
         try await client
             .from(table)
@@ -19,6 +38,12 @@ final class HabitLogRepository {
             .eq("date", value: date)
             .execute()
             .value
+    }
+
+    /// Upsert a habit log for the authenticated user.
+    func upsertLog(habitType: HabitType, date: String, count: Int) async throws -> HabitLog {
+        let userId = try await authenticatedUserId()
+        return try await upsertLog(userId: userId, habitType: habitType, date: date, count: count)
     }
 
     /// Upsert a habit log (insert or update on conflict).
@@ -41,6 +66,12 @@ final class HabitLogRepository {
             throw HabitLogError.upsertFailed
         }
         return log
+    }
+
+    /// Fetch habit logs for the authenticated user within a date range (for streak calculation).
+    func fetchLogs(from startDate: String, to endDate: String) async throws -> [HabitLog] {
+        let userId = try await authenticatedUserId()
+        return try await fetchLogs(userId: userId, from: startDate, to: endDate)
     }
 
     /// Fetch habit logs for a user within a date range (for streak calculation).
