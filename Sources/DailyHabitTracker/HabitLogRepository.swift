@@ -2,7 +2,7 @@ import Foundation
 import Supabase
 
 /// Repository for reading and writing habit log data in Supabase.
-final class HabitLogRepository {
+final class HabitLogRepository: Sendable {
     private let client: SupabaseClient
     private let authManager: AuthManager
     private let table = "habit_logs"

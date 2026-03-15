@@ -1,0 +1,53 @@
+import Foundation
+import Observation
+
+@MainActor
+@Observable
+final class DashboardViewModel {
+    private(set) var habitCounts: [HabitType: Int]
+    private(set) var isLoading = false
+    private(set) var error: (any Error)?
+
+    let repository: HabitLogRepository
+
+    var todayDisplayDate: String {
+        Date.now.formatted(date: .complete, time: .omitted)
+    }
+
+    nonisolated init(repository: HabitLogRepository) {
+        self.repository = repository
+        var counts: [HabitType: Int] = [:]
+        for habit in HabitType.allCases {
+            counts[habit] = 0
+        }
+        self.habitCounts = counts
+    }
+
+    func loadTodayLogs() async {
+        isLoading = true
+        defer { isLoading = false }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = formatter.string(from: Date())
+
+        do {
+            let logs = try await repository.fetchLogs(date: today)
+            var counts: [HabitType: Int] = [:]
+            for habit in HabitType.allCases {
+                counts[habit] = 0
+            }
+            for log in logs {
+                counts[log.habitType] = log.count
+            }
+            habitCounts = counts
+            error = nil
+        } catch {
+            self.error = error
+        }
+    }
+
+    func count(for habit: HabitType) -> Int {
+        habitCounts[habit] ?? 0
+    }
+}
