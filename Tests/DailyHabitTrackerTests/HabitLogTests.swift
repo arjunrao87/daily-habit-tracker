@@ -50,4 +50,23 @@ final class HabitLogTests: XCTestCase {
         let cases = HabitType.allCases.map(\.rawValue)
         XCTAssertEqual(cases, ["reading", "meditation", "gym", "cholesterol"])
     }
+
+    func testHabitTypeIconNames() {
+        XCTAssertEqual(HabitType.reading.iconName, "book.fill")
+        XCTAssertEqual(HabitType.meditation.iconName, "brain")
+        XCTAssertEqual(HabitType.gym.iconName, "dumbbell.fill")
+        XCTAssertEqual(HabitType.cholesterol.iconName, "fork.knife")
+    }
+
+    func testHabitTypeDisplayNames() {
+        XCTAssertEqual(HabitType.reading.displayName, "Reading")
+        XCTAssertEqual(HabitType.meditation.displayName, "Meditation")
+        XCTAssertEqual(HabitType.gym.displayName, "Gym")
+        XCTAssertEqual(HabitType.cholesterol.displayName, "Cholesterol")
+    }
+
+    func testAllHabitsHaveDistinctIcons() {
+        let icons = Set(HabitType.allCases.map(\.iconName))
+        XCTAssertEqual(icons.count, 4, "Each habit should have a unique icon")
+    }
 }

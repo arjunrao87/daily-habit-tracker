@@ -8,6 +8,26 @@ enum HabitType: String, Codable, CaseIterable {
     case cholesterol
 
     var isInverse: Bool { self == .cholesterol }
+
+    /// SF Symbol name for the habit's icon.
+    var iconName: String {
+        switch self {
+        case .reading: "book.fill"
+        case .meditation: "brain"
+        case .gym: "dumbbell.fill"
+        case .cholesterol: "fork.knife"
+        }
+    }
+
+    /// Human-readable display name.
+    var displayName: String {
+        switch self {
+        case .reading: "Reading"
+        case .meditation: "Meditation"
+        case .gym: "Gym"
+        case .cholesterol: "Cholesterol"
+        }
+    }
 }
 
 /// Represents a single row in the `habit_logs` table.

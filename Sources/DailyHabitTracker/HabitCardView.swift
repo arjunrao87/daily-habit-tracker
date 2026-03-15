@@ -9,21 +9,13 @@ struct HabitCardView: View {
     var onReset: (() -> Void)?
 
     @State private var isPressed = false
+    @Environment(\.colorScheme) private var colorScheme
 
     private var streakLabel: String {
         if habitType.isInverse {
             return streak == 1 ? "1 day clean" : "\(streak) days clean"
         } else {
             return "\(streak)-day streak"
-        }
-    }
-
-    private var displayName: String {
-        switch habitType {
-        case .reading: "Reading"
-        case .meditation: "Meditation"
-        case .gym: "Gym"
-        case .cholesterol: "Cholesterol"
         }
     }
 
@@ -37,26 +29,41 @@ struct HabitCardView: View {
     }
 
     var body: some View {
-        VStack(spacing: 12) {
-            Text(displayName)
-                .font(.headline)
-                .foregroundStyle(.white)
+        VStack(spacing: 8) {
+            Image(systemName: habitType.iconName)
+                .font(.title2)
+                .foregroundStyle(.white.opacity(0.9))
+
+            Text(habitType.displayName)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.9))
 
             Text("\(count)")
-                .font(.system(size: 48, weight: .bold, design: .rounded))
+                .font(.system(size: 44, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .contentTransition(.numericText())
 
             if streak > 0 {
-                Text(streakLabel)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.85))
-                    .contentTransition(.numericText())
+                HStack(spacing: 4) {
+                    Image(systemName: "flame.fill")
+                        .font(.caption2)
+                    Text(streakLabel)
+                        .font(.caption.weight(.semibold))
+                }
+                .foregroundStyle(.white.opacity(0.85))
+                .contentTransition(.numericText())
             }
         }
-        .frame(maxWidth: .infinity, minHeight: 140)
-        .background(cardColor.gradient)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .padding(.vertical, 16)
+        .frame(maxWidth: .infinity, minHeight: 160)
+        .background {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(cardColor.gradient)
+                .shadow(
+                    color: cardColor.opacity(colorScheme == .dark ? 0.3 : 0.25),
+                    radius: 8, y: 4
+                )
+        }
         .scaleEffect(isPressed ? 0.92 : 1.0)
         .animation(.spring(duration: 0.2), value: isPressed)
         .onTapGesture {

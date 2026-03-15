@@ -15,9 +15,9 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 24) {
                     Text(viewModel.todayDisplayDate)
-                        .font(.title3.weight(.semibold))
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
                         .padding(.horizontal)
 
@@ -50,6 +50,9 @@ struct DashboardView: View {
                 .padding(.vertical)
             }
             .navigationTitle("Today's Habits")
+            .refreshable {
+                await viewModel.loadTodayLogs()
+            }
             .task {
                 await viewModel.loadTodayLogs()
             }
