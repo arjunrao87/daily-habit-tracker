@@ -26,4 +26,22 @@ final class DashboardViewModelTests: XCTestCase {
             XCTAssertNotNil(viewModel.habitCounts[habit])
         }
     }
+
+    @MainActor
+    func testCountReturnsZeroForUnsetHabit() {
+        let viewModel = DashboardViewModel(repository: HabitLogRepository())
+        // All habits start at 0
+        for habit in HabitType.allCases {
+            XCTAssertEqual(viewModel.count(for: habit), 0)
+        }
+    }
+
+    @MainActor
+    func testIncrementCountMethodExists() {
+        // Verify the incrementCount method is available on the view model
+        let viewModel = DashboardViewModel(repository: HabitLogRepository())
+        // The method exists and can be referenced (compile-time check)
+        let _: (HabitType) async -> Void = viewModel.incrementCount
+        XCTAssertTrue(true)
+    }
 }

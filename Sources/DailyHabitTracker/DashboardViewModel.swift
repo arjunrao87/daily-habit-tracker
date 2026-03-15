@@ -50,4 +50,25 @@ final class DashboardViewModel {
     func count(for habit: HabitType) -> Int {
         habitCounts[habit] ?? 0
     }
+
+    func incrementCount(for habit: HabitType) async {
+        let previousCount = habitCounts[habit] ?? 0
+        let newCount = previousCount + 1
+
+        // Optimistic update
+        habitCounts[habit] = newCount
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = formatter.string(from: Date())
+
+        do {
+            _ = try await repository.upsertLog(habitType: habit, date: today, count: newCount)
+            error = nil
+        } catch {
+            // Roll back on failure
+            habitCounts[habit] = previousCount
+            self.error = error
+        }
+    }
 }

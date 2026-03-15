@@ -25,7 +25,12 @@ struct DashboardView: View {
                         ForEach(HabitType.allCases, id: \.self) { habit in
                             HabitCardView(
                                 habitType: habit,
-                                count: viewModel.count(for: habit)
+                                count: viewModel.count(for: habit),
+                                onTap: {
+                                    Task {
+                                        await viewModel.incrementCount(for: habit)
+                                    }
+                                }
                             )
                         }
                     }
