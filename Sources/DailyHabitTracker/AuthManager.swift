@@ -16,19 +16,19 @@ final class AuthManager: Sendable {
     func ensureAuthenticated() async throws -> String {
         // Check for an existing session first (persisted by the SDK)
         if let session = try? await client.auth.session {
-            return session.user.id.uuidString
+            return session.user.id.uuidString.lowercased()
         }
 
         // No existing session — create an anonymous one
         let session = try await client.auth.signInAnonymously()
-        return session.user.id.uuidString
+        return session.user.id.uuidString.lowercased()
     }
 
     /// Returns the current user ID, or nil if not authenticated.
     var currentUserId: String? {
         get async {
             guard let session = try? await client.auth.session else { return nil }
-            return session.user.id.uuidString
+            return session.user.id.uuidString.lowercased()
         }
     }
 

@@ -13,7 +13,7 @@ struct ContentView: View {
     var body: some View {
         Group {
             if isReady {
-                DashboardView(repository: launcher.repository)
+                DashboardView(habitRepository: launcher.habitRepository, logRepository: launcher.logRepository)
                     .transition(.opacity)
             } else {
                 LaunchScreenView()

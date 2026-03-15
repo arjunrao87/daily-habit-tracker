@@ -1,41 +1,61 @@
 import Foundation
+import SwiftUI
 
-/// The four fixed habits tracked by the app.
-enum HabitType: String, Codable, CaseIterable {
-    case reading
-    case meditation
-    case gym
-    case cholesterol
+/// A user-defined habit.
+struct Habit: Codable, Identifiable, Sendable, Hashable {
+    let id: UUID
+    let userId: String
+    var name: String
+    var icon: String
+    var color: String
+    var isInverse: Bool
+    var sortOrder: Int
+    let createdAt: String?
 
-    var isInverse: Bool { self == .cholesterol }
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId = "user_id"
+        case name
+        case icon
+        case color
+        case isInverse = "is_inverse"
+        case sortOrder = "sort_order"
+        case createdAt = "created_at"
+    }
 
-    /// SF Symbol name for the habit's icon.
-    var iconName: String {
-        switch self {
-        case .reading: "book.fill"
-        case .meditation: "brain"
-        case .gym: "dumbbell.fill"
-        case .cholesterol: "fork.knife"
+    var swiftUIColor: Color {
+        switch color {
+        case "blue": .blue
+        case "purple": .purple
+        case "green": .green
+        case "orange": .orange
+        case "red": .red
+        case "pink": .pink
+        case "teal": .teal
+        case "indigo": .indigo
+        default: .blue
         }
     }
 
-    /// Human-readable display name.
-    var displayName: String {
-        switch self {
-        case .reading: "Reading"
-        case .meditation: "Meditation"
-        case .gym: "Gym"
-        case .cholesterol: "Cholesterol"
-        }
-    }
+    static let availableIcons = [
+        "book.fill", "brain", "dumbbell.fill", "fork.knife",
+        "heart.fill", "moon.fill", "drop.fill", "flame.fill",
+        "leaf.fill", "star.fill", "music.note", "pencil",
+        "paintbrush.fill", "camera.fill", "bicycle", "figure.walk",
+        "cup.and.saucer.fill", "pills.fill", "bed.double.fill", "clock.fill"
+    ]
+
+    static let availableColors = [
+        "blue", "purple", "green", "orange", "red", "pink", "teal", "indigo"
+    ]
 }
 
 /// Represents a single row in the `habit_logs` table.
-struct HabitLog: Codable, Identifiable {
+struct HabitLog: Codable, Identifiable, Sendable {
     let id: UUID
     let userId: String
-    let habitType: HabitType
-    let date: String  // ISO 8601 date (yyyy-MM-dd)
+    let habitId: UUID
+    let date: String
     var count: Int
     let createdAt: String?
     let updatedAt: String?
@@ -43,7 +63,7 @@ struct HabitLog: Codable, Identifiable {
     enum CodingKeys: String, CodingKey {
         case id
         case userId = "user_id"
-        case habitType = "habit_type"
+        case habitId = "habit_id"
         case date
         case count
         case createdAt = "created_at"

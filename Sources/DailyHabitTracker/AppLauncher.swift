@@ -3,13 +3,15 @@ import Supabase
 
 /// Handles app launch flow: authenticates anonymously, then provides
 /// access to authenticated services. No sign-in screen is shown.
-final class AppLauncher {
+final class AppLauncher: Sendable {
     let authManager: AuthManager
-    let repository: HabitLogRepository
+    let habitRepository: HabitRepository
+    let logRepository: HabitLogRepository
 
     init(client: SupabaseClient = SupabaseConfig.client) {
         self.authManager = AuthManager(client: client)
-        self.repository = HabitLogRepository(client: client, authManager: authManager)
+        self.habitRepository = HabitRepository(client: client, authManager: authManager)
+        self.logRepository = HabitLogRepository(client: client, authManager: authManager)
     }
 
     /// Call on app launch. Ensures anonymous auth session exists,

@@ -8,7 +8,7 @@ final class HabitLogTests: XCTestCase {
         {
             "id": "550e8400-e29b-41d4-a716-446655440000",
             "user_id": "test-user-123",
-            "habit_type": "reading",
+            "habit_id": "660e8400-e29b-41d4-a716-446655440000",
             "date": "2026-03-15",
             "count": 3,
             "created_at": "2026-03-15T10:00:00Z",
@@ -20,7 +20,7 @@ final class HabitLogTests: XCTestCase {
 
         XCTAssertEqual(log.id, UUID(uuidString: "550e8400-e29b-41d4-a716-446655440000"))
         XCTAssertEqual(log.userId, "test-user-123")
-        XCTAssertEqual(log.habitType, .reading)
+        XCTAssertEqual(log.habitId, UUID(uuidString: "660e8400-e29b-41d4-a716-446655440000"))
         XCTAssertEqual(log.date, "2026-03-15")
         XCTAssertEqual(log.count, 3)
         XCTAssertNotNil(log.createdAt)
@@ -31,7 +31,7 @@ final class HabitLogTests: XCTestCase {
         let log = HabitLog(
             id: UUID(uuidString: "550e8400-e29b-41d4-a716-446655440000")!,
             userId: "test-user-123",
-            habitType: .meditation,
+            habitId: UUID(uuidString: "660e8400-e29b-41d4-a716-446655440000")!,
             date: "2026-03-15",
             count: 1,
             createdAt: nil,
@@ -42,31 +42,65 @@ final class HabitLogTests: XCTestCase {
         let dict = try JSONSerialization.jsonObject(with: data) as! [String: Any]
 
         XCTAssertEqual(dict["user_id"] as? String, "test-user-123")
-        XCTAssertEqual(dict["habit_type"] as? String, "meditation")
+        XCTAssertEqual(dict["habit_id"] as? String, "660E8400-E29B-41D4-A716-446655440000")
         XCTAssertEqual(dict["count"] as? Int, 1)
     }
 
-    func testHabitTypeCases() {
-        let cases = HabitType.allCases.map(\.rawValue)
-        XCTAssertEqual(cases, ["reading", "meditation", "gym", "cholesterol"])
+    func testHabitDecoding() throws {
+        let json = """
+        {
+            "id": "550e8400-e29b-41d4-a716-446655440000",
+            "user_id": "test-user-123",
+            "name": "Reading",
+            "icon": "book.fill",
+            "color": "blue",
+            "is_inverse": false,
+            "sort_order": 0,
+            "created_at": "2026-03-15T10:00:00Z"
+        }
+        """.data(using: .utf8)!
+
+        let habit = try JSONDecoder().decode(Habit.self, from: json)
+
+        XCTAssertEqual(habit.name, "Reading")
+        XCTAssertEqual(habit.icon, "book.fill")
+        XCTAssertEqual(habit.color, "blue")
+        XCTAssertFalse(habit.isInverse)
+        XCTAssertEqual(habit.sortOrder, 0)
     }
 
-    func testHabitTypeIconNames() {
-        XCTAssertEqual(HabitType.reading.iconName, "book.fill")
-        XCTAssertEqual(HabitType.meditation.iconName, "brain")
-        XCTAssertEqual(HabitType.gym.iconName, "dumbbell.fill")
-        XCTAssertEqual(HabitType.cholesterol.iconName, "fork.knife")
+    func testHabitSwiftUIColor() {
+        let habit = makeHabit(color: "purple")
+        // Just verify it doesn't crash for all available colors
+        for color in Habit.availableColors {
+            let h = makeHabit(color: color)
+            _ = h.swiftUIColor
+        }
+        _ = habit.swiftUIColor
     }
 
-    func testHabitTypeDisplayNames() {
-        XCTAssertEqual(HabitType.reading.displayName, "Reading")
-        XCTAssertEqual(HabitType.meditation.displayName, "Meditation")
-        XCTAssertEqual(HabitType.gym.displayName, "Gym")
-        XCTAssertEqual(HabitType.cholesterol.displayName, "Cholesterol")
+    func testAvailableIconsAndColors() {
+        XCTAssertGreaterThan(Habit.availableIcons.count, 0)
+        XCTAssertGreaterThan(Habit.availableColors.count, 0)
+        // All icons should be unique
+        XCTAssertEqual(Set(Habit.availableIcons).count, Habit.availableIcons.count)
     }
 
-    func testAllHabitsHaveDistinctIcons() {
-        let icons = Set(HabitType.allCases.map(\.iconName))
-        XCTAssertEqual(icons.count, 4, "Each habit should have a unique icon")
+    private func makeHabit(
+        name: String = "Test",
+        icon: String = "star.fill",
+        color: String = "blue",
+        isInverse: Bool = false
+    ) -> Habit {
+        Habit(
+            id: UUID(),
+            userId: "test-user",
+            name: name,
+            icon: icon,
+            color: color,
+            isInverse: isInverse,
+            sortOrder: 0,
+            createdAt: nil
+        )
     }
 }

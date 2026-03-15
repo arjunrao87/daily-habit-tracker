@@ -14,7 +14,8 @@ final class AuthManagerTests: XCTestCase {
         // Verify AppLauncher can be created and has both auth and repository
         let launcher = AppLauncher()
         XCTAssertNotNil(launcher.authManager)
-        XCTAssertNotNil(launcher.repository)
+        XCTAssertNotNil(launcher.habitRepository)
+        XCTAssertNotNil(launcher.logRepository)
     }
 
     func testHabitLogRepositoryWithAuthManager() {

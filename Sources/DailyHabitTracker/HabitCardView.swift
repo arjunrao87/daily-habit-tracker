@@ -1,40 +1,35 @@
 import SwiftUI
 
 struct HabitCardView: View {
-    let habitType: HabitType
+    let habit: Habit
     let count: Int
     var streak: Int = 0
     var onTap: (() -> Void)?
     var onDecrement: (() -> Void)?
     var onReset: (() -> Void)?
+    var onHistory: (() -> Void)?
+    var onDelete: (() -> Void)?
 
     @State private var isPressed = false
     @Environment(\.colorScheme) private var colorScheme
 
     private var streakLabel: String {
-        if habitType.isInverse {
+        if habit.isInverse {
             return streak == 1 ? "1 day clean" : "\(streak) days clean"
         } else {
             return "\(streak)-day streak"
         }
     }
 
-    private var cardColor: Color {
-        switch habitType {
-        case .reading: .blue
-        case .meditation: .purple
-        case .gym: .green
-        case .cholesterol: .orange
-        }
-    }
+    private var cardColor: Color { habit.swiftUIColor }
 
     var body: some View {
         VStack(spacing: 8) {
-            Image(systemName: habitType.iconName)
+            Image(systemName: habit.icon)
                 .font(.title2)
                 .foregroundStyle(.white.opacity(0.9))
 
-            Text(habitType.displayName)
+            Text(habit.name)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.white.opacity(0.9))
 
@@ -75,6 +70,12 @@ struct HabitCardView: View {
         }
         .contextMenu {
             Button {
+                onHistory?()
+            } label: {
+                Label("View History", systemImage: "calendar")
+            }
+
+            Button {
                 onDecrement?()
             } label: {
                 Label("Decrement (−1)", systemImage: "minus.circle")
@@ -87,6 +88,14 @@ struct HabitCardView: View {
                 Label("Reset to 0", systemImage: "arrow.counterclockwise")
             }
             .disabled(count <= 0)
+
+            Divider()
+
+            Button(role: .destructive) {
+                onDelete?()
+            } label: {
+                Label("Delete Habit", systemImage: "trash")
+            }
         }
         .sensoryFeedback(.impact(flexibility: .solid), trigger: count)
     }

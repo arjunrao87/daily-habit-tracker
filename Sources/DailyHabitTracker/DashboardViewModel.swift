@@ -4,50 +4,56 @@ import Observation
 @MainActor
 @Observable
 final class DashboardViewModel {
-    private(set) var habitCounts: [HabitType: Int]
-    private(set) var habitStreaks: [HabitType: Int]
+    private(set) var habits: [Habit] = []
+    private(set) var habitCounts: [UUID: Int] = [:]
+    private(set) var habitStreaks: [UUID: Int] = [:]
     private(set) var isLoading = false
     private(set) var error: (any Error)?
 
-    let repository: HabitLogRepository
+    let habitRepository: HabitRepository
+    let logRepository: HabitLogRepository
 
-    private var historicalDateCounts: [HabitType: [String: Int]] = [:]
-    private var todayLoggedHabits: Set<HabitType> = []
+    private var historicalDateCounts: [UUID: [String: Int]] = [:]
+    private var todayLoggedHabits: Set<UUID> = []
     private var userStartDate: Date?
 
     var todayDisplayDate: String {
         Date.now.formatted(date: .complete, time: .omitted)
     }
 
-    nonisolated init(repository: HabitLogRepository) {
-        self.repository = repository
-        var counts: [HabitType: Int] = [:]
-        var streaks: [HabitType: Int] = [:]
-        for habit in HabitType.allCases {
-            counts[habit] = 0
-            streaks[habit] = 0
-        }
-        self.habitCounts = counts
-        self.habitStreaks = streaks
+    init(habitRepository: HabitRepository, logRepository: HabitLogRepository) {
+        self.habitRepository = habitRepository
+        self.logRepository = logRepository
     }
 
-    func loadTodayLogs() async {
+    // MARK: - Loading
+
+    func loadAll() async {
         isLoading = true
         defer { isLoading = false }
 
+        do {
+            habits = try await habitRepository.fetchHabits()
+            await loadTodayLogs()
+        } catch {
+            self.error = error
+        }
+    }
+
+    func loadTodayLogs() async {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
         let today = formatter.string(from: Date())
 
         do {
-            let logs = try await repository.fetchLogs(date: today)
-            var counts: [HabitType: Int] = [:]
-            for habit in HabitType.allCases {
-                counts[habit] = 0
+            let logs = try await logRepository.fetchLogs(date: today)
+            var counts: [UUID: Int] = [:]
+            for habit in habits {
+                counts[habit.id] = 0
             }
             for log in logs {
-                counts[log.habitType] = log.count
-                todayLoggedHabits.insert(log.habitType)
+                counts[log.habitId] = log.count
+                todayLoggedHabits.insert(log.habitId)
             }
             habitCounts = counts
             error = nil
@@ -58,20 +64,67 @@ final class DashboardViewModel {
         }
     }
 
-    func count(for habit: HabitType) -> Int {
-        habitCounts[habit] ?? 0
+    // MARK: - Accessors
+
+    func count(for habit: Habit) -> Int {
+        habitCounts[habit.id] ?? 0
     }
 
-    func streak(for habit: HabitType) -> Int {
-        habitStreaks[habit] ?? 0
+    func streak(for habit: Habit) -> Int {
+        habitStreaks[habit.id] ?? 0
     }
 
-    func incrementCount(for habit: HabitType) async {
-        let previousCount = habitCounts[habit] ?? 0
+    /// Returns date→count map for a given habit (used by history view).
+    func dateCounts(for habit: Habit) -> [String: Int] {
+        var counts = historicalDateCounts[habit.id] ?? [:]
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = formatter.string(from: Date())
+        counts[today] = habitCounts[habit.id] ?? 0
+        return counts
+    }
+
+    // MARK: - Habit CRUD
+
+    func createHabit(name: String, icon: String, color: String, isInverse: Bool) async {
+        do {
+            print("[CREATE] Creating habit: \(name)")
+            let habit = try await habitRepository.createHabit(
+                name: name, icon: icon, color: color, isInverse: isInverse
+            )
+            print("[CREATE] Success: \(habit.name) id=\(habit.id)")
+            habits.append(habit)
+            habitCounts[habit.id] = 0
+            habitStreaks[habit.id] = 0
+        } catch {
+            print("[CREATE] FAILED: \(error)")
+            self.error = error
+        }
+    }
+
+    func deleteHabit(_ habit: Habit) async {
+        let previousHabits = habits
+        habits.removeAll { $0.id == habit.id }
+        habitCounts.removeValue(forKey: habit.id)
+        habitStreaks.removeValue(forKey: habit.id)
+
+        do {
+            try await habitRepository.deleteHabit(id: habit.id)
+        } catch {
+            habits = previousHabits
+            self.error = error
+        }
+    }
+
+    // MARK: - Count Operations
+
+    func incrementCount(for habit: Habit) async {
+        let previousCount = habitCounts[habit.id] ?? 0
         let newCount = previousCount + 1
 
-        habitCounts[habit] = newCount
-        todayLoggedHabits.insert(habit)
+        print("[INCREMENT] \(habit.name): \(previousCount) -> \(newCount), habitId=\(habit.id)")
+        habitCounts[habit.id] = newCount
+        todayLoggedHabits.insert(habit.id)
         recalculateStreak(for: habit)
 
         let formatter = DateFormatter()
@@ -79,22 +132,24 @@ final class DashboardViewModel {
         let today = formatter.string(from: Date())
 
         do {
-            _ = try await repository.upsertLog(habitType: habit, date: today, count: newCount)
+            let result = try await logRepository.upsertLog(habitId: habit.id, date: today, count: newCount)
+            print("[INCREMENT] Upsert success: \(habit.name) count=\(result.count)")
             error = nil
         } catch {
-            habitCounts[habit] = previousCount
+            print("[INCREMENT] Upsert FAILED: \(habit.name) error=\(error)")
+            habitCounts[habit.id] = previousCount
             recalculateStreak(for: habit)
             self.error = error
         }
     }
 
-    func decrementCount(for habit: HabitType) async {
-        let previousCount = habitCounts[habit] ?? 0
+    func decrementCount(for habit: Habit) async {
+        let previousCount = habitCounts[habit.id] ?? 0
         let newCount = max(previousCount - 1, 0)
 
         guard newCount != previousCount else { return }
 
-        habitCounts[habit] = newCount
+        habitCounts[habit.id] = newCount
         recalculateStreak(for: habit)
 
         let formatter = DateFormatter()
@@ -102,21 +157,21 @@ final class DashboardViewModel {
         let today = formatter.string(from: Date())
 
         do {
-            _ = try await repository.upsertLog(habitType: habit, date: today, count: newCount)
+            _ = try await logRepository.upsertLog(habitId: habit.id, date: today, count: newCount)
             error = nil
         } catch {
-            habitCounts[habit] = previousCount
+            habitCounts[habit.id] = previousCount
             recalculateStreak(for: habit)
             self.error = error
         }
     }
 
-    func resetCount(for habit: HabitType) async {
-        let previousCount = habitCounts[habit] ?? 0
+    func resetCount(for habit: Habit) async {
+        let previousCount = habitCounts[habit.id] ?? 0
 
         guard previousCount != 0 else { return }
 
-        habitCounts[habit] = 0
+        habitCounts[habit.id] = 0
         recalculateStreak(for: habit)
 
         let formatter = DateFormatter()
@@ -124,10 +179,10 @@ final class DashboardViewModel {
         let today = formatter.string(from: Date())
 
         do {
-            _ = try await repository.upsertLog(habitType: habit, date: today, count: 0)
+            _ = try await logRepository.upsertLog(habitId: habit.id, date: today, count: 0)
             error = nil
         } catch {
-            habitCounts[habit] = previousCount
+            habitCounts[habit.id] = previousCount
             recalculateStreak(for: habit)
             self.error = error
         }
@@ -146,14 +201,14 @@ final class DashboardViewModel {
         let endString = formatter.string(from: today)
 
         do {
-            let logs = try await repository.fetchLogs(from: startString, to: endString)
+            let logs = try await logRepository.fetchLogs(from: startString, to: endString)
 
-            var dateCounts: [HabitType: [String: Int]] = [:]
-            for habit in HabitType.allCases {
-                dateCounts[habit] = [:]
+            var dateCounts: [UUID: [String: Int]] = [:]
+            for habit in habits {
+                dateCounts[habit.id] = [:]
             }
             for log in logs {
-                dateCounts[log.habitType]?[log.date] = log.count
+                dateCounts[log.habitId]?[log.date] = log.count
             }
             historicalDateCounts = dateCounts
 
@@ -168,16 +223,16 @@ final class DashboardViewModel {
     }
 
     private func recalculateAllStreaks() {
-        for habit in HabitType.allCases {
-            habitStreaks[habit] = calculateStreak(for: habit)
+        for habit in habits {
+            habitStreaks[habit.id] = calculateStreak(for: habit)
         }
     }
 
-    private func recalculateStreak(for habit: HabitType) {
-        habitStreaks[habit] = calculateStreak(for: habit)
+    private func recalculateStreak(for habit: Habit) {
+        habitStreaks[habit.id] = calculateStreak(for: habit)
     }
 
-    private func calculateStreak(for habit: HabitType) -> Int {
+    private func calculateStreak(for habit: Habit) -> Int {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         let formatter = DateFormatter()
@@ -186,9 +241,8 @@ final class DashboardViewModel {
         let isInverse = habit.isInverse
         var streak = 0
 
-        // Check today
-        if todayLoggedHabits.contains(habit) {
-            let todayCount = habitCounts[habit] ?? 0
+        if todayLoggedHabits.contains(habit.id) {
+            let todayCount = habitCounts[habit.id] ?? 0
             let meetsCondition = isInverse ? todayCount == 0 : todayCount >= 1
             if meetsCondition {
                 streak = 1
@@ -196,20 +250,17 @@ final class DashboardViewModel {
                 return 0
             }
         }
-        // If today not logged, skip today and start from yesterday
 
-        // Walk backwards from yesterday
         guard var checkDate = calendar.date(byAdding: .day, value: -1, to: today) else { return streak }
         guard let minDate = calendar.date(byAdding: .day, value: -365, to: today) else { return streak }
 
         while checkDate >= minDate {
-            // For inverse habits, stop before the user's first recorded activity
             if isInverse, let startDate = userStartDate, checkDate < startDate {
                 break
             }
 
             let dateString = formatter.string(from: checkDate)
-            let count = historicalDateCounts[habit]?[dateString] ?? 0
+            let count = historicalDateCounts[habit.id]?[dateString] ?? 0
 
             let meetsCondition = isInverse ? count == 0 : count >= 1
             if meetsCondition {

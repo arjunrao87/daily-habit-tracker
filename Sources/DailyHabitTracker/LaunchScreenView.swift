@@ -5,8 +5,13 @@ import SwiftUI
 struct LaunchScreenView: View {
     var body: some View {
         ZStack {
+            #if os(iOS)
             Color(.systemBackground)
                 .ignoresSafeArea()
+            #else
+            Color(.windowBackgroundColor)
+                .ignoresSafeArea()
+            #endif
 
             VStack(spacing: 16) {
                 Image(systemName: "checkmark.circle.fill")

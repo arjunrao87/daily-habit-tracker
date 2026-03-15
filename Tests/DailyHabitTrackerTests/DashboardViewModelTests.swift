@@ -2,100 +2,77 @@ import XCTest
 @testable import DailyHabitTracker
 
 final class DashboardViewModelTests: XCTestCase {
+
+    private func makeHabit(
+        name: String = "Test",
+        icon: String = "star.fill",
+        color: String = "blue",
+        isInverse: Bool = false
+    ) -> Habit {
+        Habit(
+            id: UUID(),
+            userId: "test-user",
+            name: name,
+            icon: icon,
+            color: color,
+            isInverse: isInverse,
+            sortOrder: 0,
+            createdAt: nil
+        )
+    }
+
     @MainActor
-    func testViewModelInitializesWithZeroCounts() {
-        let viewModel = DashboardViewModel(repository: HabitLogRepository())
-        for habit in HabitType.allCases {
-            XCTAssertEqual(viewModel.count(for: habit), 0)
-        }
+    func testViewModelInitializesEmpty() {
+        let viewModel = DashboardViewModel(
+            habitRepository: HabitRepository(),
+            logRepository: HabitLogRepository()
+        )
+        XCTAssertTrue(viewModel.habits.isEmpty)
+        XCTAssertTrue(viewModel.habitCounts.isEmpty)
     }
 
     @MainActor
     func testTodayDisplayDateIsNotEmpty() {
-        let viewModel = DashboardViewModel(repository: HabitLogRepository())
+        let viewModel = DashboardViewModel(
+            habitRepository: HabitRepository(),
+            logRepository: HabitLogRepository()
+        )
         XCTAssertFalse(viewModel.todayDisplayDate.isEmpty)
     }
 
     @MainActor
-    func testAllFourHabitsHaveCards() {
-        let viewModel = DashboardViewModel(repository: HabitLogRepository())
-        let habits = HabitType.allCases
-        XCTAssertEqual(habits.count, 4)
-        XCTAssertEqual(viewModel.habitCounts.count, 4)
-        for habit in habits {
-            XCTAssertNotNil(viewModel.habitCounts[habit])
-        }
+    func testCountReturnsZeroForUnknownHabit() {
+        let viewModel = DashboardViewModel(
+            habitRepository: HabitRepository(),
+            logRepository: HabitLogRepository()
+        )
+        let habit = makeHabit()
+        XCTAssertEqual(viewModel.count(for: habit), 0)
     }
 
     @MainActor
-    func testCountReturnsZeroForUnsetHabit() {
-        let viewModel = DashboardViewModel(repository: HabitLogRepository())
-        // All habits start at 0
-        for habit in HabitType.allCases {
-            XCTAssertEqual(viewModel.count(for: habit), 0)
-        }
+    func testStreakReturnsZeroForUnknownHabit() {
+        let viewModel = DashboardViewModel(
+            habitRepository: HabitRepository(),
+            logRepository: HabitLogRepository()
+        )
+        let habit = makeHabit()
+        XCTAssertEqual(viewModel.streak(for: habit), 0)
     }
 
-    @MainActor
-    func testIncrementCountMethodExists() {
-        // Verify the incrementCount method is available on the view model
-        let viewModel = DashboardViewModel(repository: HabitLogRepository())
-        // The method exists and can be referenced (compile-time check)
-        let _: (HabitType) async -> Void = viewModel.incrementCount
-        XCTAssertTrue(true)
+    func testHabitInverseProperty() {
+        let inverse = makeHabit(isInverse: true)
+        let normal = makeHabit(isInverse: false)
+        XCTAssertTrue(inverse.isInverse)
+        XCTAssertFalse(normal.isInverse)
     }
 
-    @MainActor
-    func testDecrementCountMethodExists() {
-        let viewModel = DashboardViewModel(repository: HabitLogRepository())
-        let _: (HabitType) async -> Void = viewModel.decrementCount
-        XCTAssertTrue(true)
-    }
-
-    @MainActor
-    func testResetCountMethodExists() {
-        let viewModel = DashboardViewModel(repository: HabitLogRepository())
-        let _: (HabitType) async -> Void = viewModel.resetCount
-        XCTAssertTrue(true)
-    }
-
-    @MainActor
-    func testCountCannotGoNegative() {
-        let viewModel = DashboardViewModel(repository: HabitLogRepository())
-        // All counts start at 0 — decrement should not go below 0
-        for habit in HabitType.allCases {
-            XCTAssertEqual(viewModel.count(for: habit), 0)
-        }
-    }
-
-    @MainActor
-    func testStreaksInitializeToZero() {
-        let viewModel = DashboardViewModel(repository: HabitLogRepository())
-        for habit in HabitType.allCases {
-            XCTAssertEqual(viewModel.streak(for: habit), 0)
-        }
-    }
-
-    @MainActor
-    func testStreakMethodExists() {
-        let viewModel = DashboardViewModel(repository: HabitLogRepository())
-        let _: (HabitType) -> Int = viewModel.streak
-        XCTAssertTrue(true)
-    }
-
-    @MainActor
-    func testHabitStreaksPropertyExists() {
-        let viewModel = DashboardViewModel(repository: HabitLogRepository())
-        XCTAssertEqual(viewModel.habitStreaks.count, 4)
-        for habit in HabitType.allCases {
-            XCTAssertNotNil(viewModel.habitStreaks[habit])
-        }
-    }
-
-    func testCholesterolIsInverseHabit() {
-        XCTAssertTrue(HabitType.cholesterol.isInverse)
-        XCTAssertFalse(HabitType.reading.isInverse)
-        XCTAssertFalse(HabitType.meditation.isInverse)
-        XCTAssertFalse(HabitType.gym.isInverse)
+    func testHabitHashable() {
+        let habit1 = makeHabit(name: "A")
+        let habit2 = makeHabit(name: "B")
+        var set: Set<Habit> = []
+        set.insert(habit1)
+        set.insert(habit2)
+        XCTAssertEqual(set.count, 2)
     }
 }
