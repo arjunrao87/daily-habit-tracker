@@ -1,0 +1,14 @@
+[project]
+id = "daily-habit-tracker"
+name = "Daily Habit Tracker"
+
+[db]
+port = 54322
+
+[auth]
+enabled = true
+# Enable anonymous sign-ins for frictionless onboarding
+enable_anonymous_sign_ins = true
+
+[api]
+port = 54321
