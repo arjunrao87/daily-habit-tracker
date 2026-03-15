@@ -71,4 +71,47 @@ final class DashboardViewModel {
             self.error = error
         }
     }
+
+    func decrementCount(for habit: HabitType) async {
+        let previousCount = habitCounts[habit] ?? 0
+        let newCount = max(previousCount - 1, 0)
+
+        guard newCount != previousCount else { return }
+
+        // Optimistic update
+        habitCounts[habit] = newCount
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = formatter.string(from: Date())
+
+        do {
+            _ = try await repository.upsertLog(habitType: habit, date: today, count: newCount)
+            error = nil
+        } catch {
+            habitCounts[habit] = previousCount
+            self.error = error
+        }
+    }
+
+    func resetCount(for habit: HabitType) async {
+        let previousCount = habitCounts[habit] ?? 0
+
+        guard previousCount != 0 else { return }
+
+        // Optimistic update
+        habitCounts[habit] = 0
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = formatter.string(from: Date())
+
+        do {
+            _ = try await repository.upsertLog(habitType: habit, date: today, count: 0)
+            error = nil
+        } catch {
+            habitCounts[habit] = previousCount
+            self.error = error
+        }
+    }
 }

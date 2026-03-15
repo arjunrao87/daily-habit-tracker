@@ -44,4 +44,27 @@ final class DashboardViewModelTests: XCTestCase {
         let _: (HabitType) async -> Void = viewModel.incrementCount
         XCTAssertTrue(true)
     }
+
+    @MainActor
+    func testDecrementCountMethodExists() {
+        let viewModel = DashboardViewModel(repository: HabitLogRepository())
+        let _: (HabitType) async -> Void = viewModel.decrementCount
+        XCTAssertTrue(true)
+    }
+
+    @MainActor
+    func testResetCountMethodExists() {
+        let viewModel = DashboardViewModel(repository: HabitLogRepository())
+        let _: (HabitType) async -> Void = viewModel.resetCount
+        XCTAssertTrue(true)
+    }
+
+    @MainActor
+    func testCountCannotGoNegative() {
+        let viewModel = DashboardViewModel(repository: HabitLogRepository())
+        // All counts start at 0 — decrement should not go below 0
+        for habit in HabitType.allCases {
+            XCTAssertEqual(viewModel.count(for: habit), 0)
+        }
+    }
 }

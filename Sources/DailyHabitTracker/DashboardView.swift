@@ -30,6 +30,16 @@ struct DashboardView: View {
                                     Task {
                                         await viewModel.incrementCount(for: habit)
                                     }
+                                },
+                                onDecrement: {
+                                    Task {
+                                        await viewModel.decrementCount(for: habit)
+                                    }
+                                },
+                                onReset: {
+                                    Task {
+                                        await viewModel.resetCount(for: habit)
+                                    }
                                 }
                             )
                         }

@@ -4,6 +4,8 @@ struct HabitCardView: View {
     let habitType: HabitType
     let count: Int
     var onTap: (() -> Void)?
+    var onDecrement: (() -> Void)?
+    var onReset: (() -> Void)?
 
     @State private var isPressed = false
 
@@ -47,6 +49,21 @@ struct HabitCardView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                 isPressed = false
             }
+        }
+        .contextMenu {
+            Button {
+                onDecrement?()
+            } label: {
+                Label("Decrement (−1)", systemImage: "minus.circle")
+            }
+            .disabled(count <= 0)
+
+            Button(role: .destructive) {
+                onReset?()
+            } label: {
+                Label("Reset to 0", systemImage: "arrow.counterclockwise")
+            }
+            .disabled(count <= 0)
         }
         .sensoryFeedback(.impact(flexibility: .solid), trigger: count)
     }
