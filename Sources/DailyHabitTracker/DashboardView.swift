@@ -26,6 +26,7 @@ struct DashboardView: View {
                             HabitCardView(
                                 habitType: habit,
                                 count: viewModel.count(for: habit),
+                                streak: viewModel.streak(for: habit),
                                 onTap: {
                                     Task {
                                         await viewModel.incrementCount(for: habit)

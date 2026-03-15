@@ -3,11 +3,20 @@ import SwiftUI
 struct HabitCardView: View {
     let habitType: HabitType
     let count: Int
+    var streak: Int = 0
     var onTap: (() -> Void)?
     var onDecrement: (() -> Void)?
     var onReset: (() -> Void)?
 
     @State private var isPressed = false
+
+    private var streakLabel: String {
+        if habitType.isInverse {
+            return streak == 1 ? "1 day clean" : "\(streak) days clean"
+        } else {
+            return "\(streak)-day streak"
+        }
+    }
 
     private var displayName: String {
         switch habitType {
@@ -37,6 +46,13 @@ struct HabitCardView: View {
                 .font(.system(size: 48, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
                 .contentTransition(.numericText())
+
+            if streak > 0 {
+                Text(streakLabel)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.85))
+                    .contentTransition(.numericText())
+            }
         }
         .frame(maxWidth: .infinity, minHeight: 140)
         .background(cardColor.gradient)

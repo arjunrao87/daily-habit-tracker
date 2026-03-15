@@ -67,4 +67,35 @@ final class DashboardViewModelTests: XCTestCase {
             XCTAssertEqual(viewModel.count(for: habit), 0)
         }
     }
+
+    @MainActor
+    func testStreaksInitializeToZero() {
+        let viewModel = DashboardViewModel(repository: HabitLogRepository())
+        for habit in HabitType.allCases {
+            XCTAssertEqual(viewModel.streak(for: habit), 0)
+        }
+    }
+
+    @MainActor
+    func testStreakMethodExists() {
+        let viewModel = DashboardViewModel(repository: HabitLogRepository())
+        let _: (HabitType) -> Int = viewModel.streak
+        XCTAssertTrue(true)
+    }
+
+    @MainActor
+    func testHabitStreaksPropertyExists() {
+        let viewModel = DashboardViewModel(repository: HabitLogRepository())
+        XCTAssertEqual(viewModel.habitStreaks.count, 4)
+        for habit in HabitType.allCases {
+            XCTAssertNotNil(viewModel.habitStreaks[habit])
+        }
+    }
+
+    func testCholesterolIsInverseHabit() {
+        XCTAssertTrue(HabitType.cholesterol.isInverse)
+        XCTAssertFalse(HabitType.reading.isInverse)
+        XCTAssertFalse(HabitType.meditation.isInverse)
+        XCTAssertFalse(HabitType.gym.isInverse)
+    }
 }

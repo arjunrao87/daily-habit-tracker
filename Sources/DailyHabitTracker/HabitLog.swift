@@ -6,6 +6,8 @@ enum HabitType: String, Codable, CaseIterable {
     case meditation
     case gym
     case cholesterol
+
+    var isInverse: Bool { self == .cholesterol }
 }
 
 /// Represents a single row in the `habit_logs` table.
