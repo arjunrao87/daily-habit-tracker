@@ -2,15 +2,15 @@
 import PackageDescription
 
 let package = Package(
-    name: "DailyHabitTracker",
+    name: "Cadence",
     platforms: [
         .iOS(.v17),
         .macOS(.v14)
     ],
     products: [
         .library(
-            name: "DailyHabitTracker",
-            targets: ["DailyHabitTracker"]
+            name: "Cadence",
+            targets: ["Cadence"]
         )
     ],
     dependencies: [
@@ -18,16 +18,16 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "DailyHabitTracker",
+            name: "Cadence",
             dependencies: [
                 .product(name: "Supabase", package: "supabase-swift")
             ],
-            path: "Sources/DailyHabitTracker"
+            path: "Sources/Cadence"
         ),
         .testTarget(
-            name: "DailyHabitTrackerTests",
-            dependencies: ["DailyHabitTracker"],
-            path: "Tests/DailyHabitTrackerTests"
+            name: "CadenceTests",
+            dependencies: ["Cadence"],
+            path: "Tests/CadenceTests"
         )
     ]
 )

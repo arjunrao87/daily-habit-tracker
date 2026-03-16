@@ -4,11 +4,13 @@ struct DashboardView: View {
     @State private var viewModel: DashboardViewModel
     @State private var historyHabit: Habit?
     @State private var showAddHabit = false
+    private let networkMonitor: NetworkMonitor
 
-    init(habitRepository: HabitRepository, logRepository: HabitLogRepository) {
+    init(habitRepository: HabitRepository, logRepository: HabitLogRepository, networkMonitor: NetworkMonitor) {
         self._viewModel = State(initialValue: DashboardViewModel(
             habitRepository: habitRepository, logRepository: logRepository
         ))
+        self.networkMonitor = networkMonitor
     }
 
     private let columns = [
@@ -20,10 +22,30 @@ struct DashboardView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
+                    if !networkMonitor.isConnected {
+                        HStack(spacing: 8) {
+                            Image(systemName: "wifi.slash")
+                                .font(.caption)
+                            Text("You're offline — habits will sync when you reconnect")
+                                .font(.caption)
+                        }
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 16)
+                        .background {
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(.yellow.opacity(0.12))
+                        }
+                        .padding(.horizontal)
+                    }
+
                     Text(viewModel.todayDisplayDate)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
                         .padding(.horizontal)
+
+                    streakBanner
 
                     if viewModel.habits.isEmpty && !viewModel.isLoading {
                         emptyState
@@ -67,7 +89,7 @@ struct DashboardView: View {
                 }
                 .padding(.vertical)
             }
-            .navigationTitle("Today's Habits")
+            .navigationTitle(viewModel.greeting)
             .refreshable {
                 await viewModel.loadAll()
             }
@@ -90,6 +112,43 @@ struct DashboardView: View {
                     }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var streakBanner: some View {
+        if viewModel.isPerfectDay {
+            let streak = viewModel.perfectDayStreak
+            HStack(spacing: 8) {
+                Image(systemName: "flame.fill")
+                    .foregroundStyle(.orange)
+                Text("All habits hit — \(streak) day streak!")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .background {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(.orange.opacity(0.12).gradient)
+            }
+            .padding(.horizontal)
+        } else if let best = viewModel.bestStreakHabit {
+            HStack(spacing: 8) {
+                Image(systemName: best.habit.icon)
+                    .foregroundStyle(best.habit.swiftUIColor)
+                Text("\(best.habit.name) — \(best.streak) day streak")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .background {
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(.secondary.opacity(0.08))
+            }
+            .padding(.horizontal)
         }
     }
 

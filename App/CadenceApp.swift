@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct DailyHabitTrackerApp: App {
+struct CadenceApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

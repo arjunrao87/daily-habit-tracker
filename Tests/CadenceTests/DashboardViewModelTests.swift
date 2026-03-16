@@ -1,5 +1,5 @@
 import XCTest
-@testable import DailyHabitTracker
+@testable import Cadence
 
 final class DashboardViewModelTests: XCTestCase {
 
