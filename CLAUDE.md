@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-iOS daily habit tracking app built with Swift 6.0 and SwiftUI, using Supabase for backend (auth, database). Supports iOS 17+ and macOS 14+. Users authenticate anonymously and track daily habit counts with streak tracking.
+**Cadence** — iOS daily habit tracking app built with Swift 6.0 and SwiftUI, using Supabase for backend (auth, database). Supports iOS 17+ and macOS 14+. Users authenticate anonymously and track daily habit counts with streak tracking.
 
 ## Build & Test Commands
 
@@ -13,7 +13,7 @@ iOS daily habit tracking app built with Swift 6.0 and SwiftUI, using Supabase fo
 swift build
 
 # Build (Xcode - used for iOS app target)
-xcodebuild build -scheme DailyHabitTracker -destination 'platform=iOS Simulator,name=iPhone 16'
+xcodebuild build -scheme Cadence -destination 'platform=iOS Simulator,name=iPhone 16'
 
 # Regenerate Xcode project from project.yml
 xcodegen generate
@@ -28,7 +28,7 @@ swift test --filter DashboardViewModelTests
 swift test --filter DashboardViewModelTests/testInitialState
 ```
 
-The Xcode project is generated from `project.yml` via XcodeGen. The `App/` directory contains the app entry point (`DailyHabitTrackerApp.swift`), while `Sources/DailyHabitTracker/` contains all library code. Both are compiled into the app target by Xcode, but only the library target is used by `swift build`/`swift test`.
+The Xcode project is generated from `project.yml` via XcodeGen. The `App/` directory contains the app entry point (`CadenceApp.swift`), while `Sources/Cadence/` contains all library code. Both are compiled into the app target by Xcode, but only the library target is used by `swift build`/`swift test`.
 
 ## Architecture
 
@@ -46,7 +46,7 @@ The Xcode project is generated from `project.yml` via XcodeGen. The `App/` direc
 
 ## Supabase Backend
 
-- Config: `supabase/config.toml` (project ID: `daily-habit-tracker`)
+- Config: `supabase/config.toml` (project ID: `cadence`)
 - Migrations in `supabase/migrations/` — two tables: `habits` and `habit_logs` with Row-Level Security
 - Anonymous auth enabled — no email/password flow
 - Integration test scripts in `scripts/` (Python, requires `supabase` pip package)

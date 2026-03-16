@@ -14,11 +14,10 @@ struct LaunchScreenView: View {
             #endif
 
             VStack(spacing: 16) {
-                Image(systemName: "checkmark.circle.fill")
+                Text("🎯")
                     .font(.system(size: 64))
-                    .foregroundStyle(.blue.gradient)
 
-                Text("Daily Habits")
+                Text("Cadence")
                     .font(.largeTitle.weight(.bold))
                     .foregroundStyle(.primary)
 

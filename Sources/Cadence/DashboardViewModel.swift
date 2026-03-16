@@ -21,6 +21,68 @@ final class DashboardViewModel {
         Date.now.formatted(date: .complete, time: .omitted)
     }
 
+    var greeting: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 5..<12: return "Good Morning"
+        case 12..<17: return "Good Afternoon"
+        case 17..<22: return "Good Evening"
+        default: return "Good Night"
+        }
+    }
+
+    var isPerfectDay: Bool {
+        guard !habits.isEmpty else { return false }
+        return habits.allSatisfy { habit in
+            let count = habitCounts[habit.id] ?? 0
+            return habit.isInverse ? count == 0 : count >= 1
+        }
+    }
+
+    var perfectDayStreak: Int {
+        guard isPerfectDay else { return 0 }
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+
+        var streak = 1
+        guard var checkDate = calendar.date(byAdding: .day, value: -1, to: today) else { return streak }
+        guard let minDate = calendar.date(byAdding: .day, value: -365, to: today) else { return streak }
+
+        while checkDate >= minDate {
+            let dateString = formatter.string(from: checkDate)
+            let allMet = habits.allSatisfy { habit in
+                let count = historicalDateCounts[habit.id]?[dateString] ?? 0
+                return habit.isInverse ? count == 0 : count >= 1
+            }
+            if allMet {
+                streak += 1
+                guard let prev = calendar.date(byAdding: .day, value: -1, to: checkDate) else { break }
+                checkDate = prev
+            } else {
+                break
+            }
+        }
+        return streak
+    }
+
+    var bestStreakHabit: (habit: Habit, streak: Int)? {
+        guard !habits.isEmpty else { return nil }
+        var best: (Habit, Int)?
+        for habit in habits {
+            let s = habitStreaks[habit.id] ?? 0
+            if s > 0 {
+                if best == nil || s > best!.1 {
+                    best = (habit, s)
+                }
+            }
+        }
+        if let best { return (habit: best.0, streak: best.1) }
+        return nil
+    }
+
     init(habitRepository: HabitRepository, logRepository: HabitLogRepository) {
         self.habitRepository = habitRepository
         self.logRepository = logRepository

@@ -1,6 +1,6 @@
 [project]
-id = "daily-habit-tracker"
-name = "Daily Habit Tracker"
+id = "cadence"
+name = "Cadence"
 
 [db]
 port = 54322
