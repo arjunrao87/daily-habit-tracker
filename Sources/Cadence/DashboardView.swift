@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct DashboardView: View {
+    @Environment(\.scenePhase) private var scenePhase
     @State private var viewModel: DashboardViewModel
     @State private var historyHabit: Habit?
     @State private var showAddHabit = false
@@ -95,6 +96,13 @@ struct DashboardView: View {
             }
             .task {
                 await viewModel.loadAll()
+            }
+            .onChange(of: scenePhase) { _, newPhase in
+                if newPhase == .active {
+                    Task {
+                        await viewModel.reloadIfDayChanged()
+                    }
+                }
             }
             .sheet(item: $historyHabit) { habit in
                 HabitHistoryView(

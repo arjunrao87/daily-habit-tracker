@@ -16,6 +16,7 @@ final class DashboardViewModel {
     private var historicalDateCounts: [UUID: [String: Int]] = [:]
     private var todayLoggedHabits: Set<UUID> = []
     private var userStartDate: Date?
+    private var lastLoadedDate: String?
 
     var todayDisplayDate: String {
         Date.now.formatted(date: .complete, time: .omitted)
@@ -102,6 +103,16 @@ final class DashboardViewModel {
         }
     }
 
+    /// Reloads data if the calendar day has changed since the last load.
+    /// Call this when the app returns to the foreground.
+    func reloadIfDayChanged() async {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = formatter.string(from: Date())
+        guard today != lastLoadedDate else { return }
+        await loadAll()
+    }
+
     func loadTodayLogs() async {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -109,6 +120,7 @@ final class DashboardViewModel {
 
         do {
             let logs = try await logRepository.fetchLogs(date: today)
+            todayLoggedHabits = []
             var counts: [UUID: Int] = [:]
             for habit in habits {
                 counts[habit.id] = 0
@@ -118,6 +130,7 @@ final class DashboardViewModel {
                 todayLoggedHabits.insert(log.habitId)
             }
             habitCounts = counts
+            lastLoadedDate = today
             error = nil
 
             await loadStreaks()
